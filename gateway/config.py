@@ -17,8 +17,8 @@ STREAM_MAXLEN = int(os.environ.get("STREAM_MAXLEN", 200_000))
 
 # --- Rate limiting (token bucket, per client) ---
 RATE_LIMIT_ENABLED = os.environ.get("RATE_LIMIT_ENABLED", "true").lower() == "true"
-RATE_LIMIT_CAPACITY = float(os.environ.get("RATE_LIMIT_CAPACITY", 100))       # max burst size (tokens)
-RATE_LIMIT_REFILL_PER_SEC = float(os.environ.get("RATE_LIMIT_REFILL_PER_SEC", 20))  # steady-state req/s allowed
+RATE_LIMIT_CAPACITY = float(os.environ.get("RATE_LIMIT_CAPACITY", 100000))       # max burst size (tokens)
+RATE_LIMIT_REFILL_PER_SEC = float(os.environ.get("RATE_LIMIT_REFILL_PER_SEC", 50000))  # steady-state req/s allowed
 
 # --- Response cache ---
 CACHE_ENABLED = os.environ.get("CACHE_ENABLED", "true").lower() == "true"
