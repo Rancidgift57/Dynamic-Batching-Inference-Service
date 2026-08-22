@@ -32,7 +32,7 @@ size grows — this repo exists to measure and demonstrate that effect.
 - [Monitoring (Prometheus + Grafana)](#monitoring-prometheus--grafana)
 - [Testing](#testing)
 - [Known Limitations & Future Work](#known-limitations--future-work)
-
+- [Implementation Guide](./Implemention(AI Proxy).md)
 ---
 
 ## How Dynamic Batching Works
