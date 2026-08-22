@@ -1,33 +1,21 @@
+#!/usr/bin/env bash
 set -e
 
-HOST="http://localhost:8000"
+# Run against the already-running stack: `docker compose up --build -d`
+HOST="http://localhost:8000"   # Nginx, not a gateway replica directly
 DURATION=30s
-USERS=100
-SPAWN_RATE=20
+USERS=500
+SPAWN_RATE=50
 OUT_DIR="benchmarks/results"
 mkdir -p "$OUT_DIR"
 
-run_config () {
-  local name=$1
-  local max_batch=$2
-  echo "=== Running config: $name (MAX_BATCH_SIZE=$max_batch) ==="
+echo "=== Load-testing $HOST for ${DURATION} with ${USERS} users ==="
+locust -f benchmarks/locustfile.py --host "$HOST" \
+  --headless -u "$USERS" -r "$SPAWN_RATE" --run-time "$DURATION" \
+  --csv="$OUT_DIR/gateway_run"
 
-  MAX_BATCH_SIZE=$max_batch uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-  SERVER_PID=$!
-  sleep 5   # wait for model to load
-
-  locust -f benchmarks/locustfile.py --host "$HOST" \
-    --headless -u $USERS -r $SPAWN_RATE --run-time $DURATION \
-    --csv="$OUT_DIR/$name"
-
-  kill $SERVER_PID
-  wait $SERVER_PID 2>/dev/null || true
-  sleep 2
-}
-
-run_config "baseline_batch1"   1
-run_config "dynamic_batch8"    8
-run_config "dynamic_batch16"   16
-run_config "dynamic_batch32"   32
-
-echo "All runs complete. CSVs are in $OUT_DIR/"
+echo "Done. CSVs are in $OUT_DIR/"
+echo
+echo "For a genuine 1M-request-class run, use Locust's distributed mode:"
+echo "  locust -f benchmarks/locustfile.py --master --host $HOST"
+echo "  locust -f benchmarks/locustfile.py --worker --master-host <master-ip>   # x N machines"
