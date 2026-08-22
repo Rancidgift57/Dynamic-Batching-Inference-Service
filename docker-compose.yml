@@ -4,8 +4,8 @@ x-gateway-env: &gateway-env
   REDIS_URL: redis://redis:6379
   MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
   RATE_LIMIT_ENABLED: "true"
-  RATE_LIMIT_CAPACITY: "100"
-  RATE_LIMIT_REFILL_PER_SEC: "20"
+  RATE_LIMIT_CAPACITY: "100000"
+  RATE_LIMIT_REFILL_PER_SEC: "50000"
   CACHE_ENABLED: "true"
   CACHE_TTL_SECONDS: "300"
   RESULT_WAIT_TIMEOUT_S: "5.0"
@@ -40,21 +40,27 @@ services:
 
   gateway-1:
     build: { context: ., dockerfile: Dockerfile.gateway }
-    environment: *gateway-env
+    environment:
+      - RATE_LIMIT_CAPACITY=100000
+      - RATE_LIMIT_REFILL_PER_SEC=50000
     depends_on:
       redis:
         condition: service_healthy
 
   gateway-2:
     build: { context: ., dockerfile: Dockerfile.gateway }
-    environment: *gateway-env
+    environment:
+      - RATE_LIMIT_CAPACITY=100000
+      - RATE_LIMIT_REFILL_PER_SEC=50000
     depends_on:
       redis:
         condition: service_healthy
 
   gateway-3:
     build: { context: ., dockerfile: Dockerfile.gateway }
-    environment: *gateway-env
+    environment:
+      - RATE_LIMIT_CAPACITY=100000
+      - RATE_LIMIT_REFILL_PER_SEC=50000
     depends_on:
       redis:
         condition: service_healthy
