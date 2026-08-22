@@ -1,17 +1,89 @@
-# docker-compose.yml
 version: "3.8"
+
+x-gateway-env: &gateway-env
+  REDIS_URL: redis://redis:6379
+  MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_CAPACITY: "100"
+  RATE_LIMIT_REFILL_PER_SEC: "20"
+  CACHE_ENABLED: "true"
+  CACHE_TTL_SECONDS: "300"
+  RESULT_WAIT_TIMEOUT_S: "5.0"
+  STREAM_MAXLEN: "200000"
+
+x-worker-env: &worker-env
+  REDIS_URL: redis://redis:6379
+  MODEL_NAME: sentence-transformers/all-MiniLM-L6-v2
+  # Switch to "echo" for zero-dependency load testing of the queueing/
+  # batching plumbing without downloading/running a real model.
+  MODEL_BACKEND: embedding
+  MAX_BATCH_SIZE: "32"
+  BATCH_TIMEOUT_MS: "10"
+  IDLE_BLOCK_MS: "1000"
+  STALE_CLAIM_MS: "30000"
+  RECLAIM_INTERVAL_S: "5.0"
+  METRICS_PORT: "9100"
+
 services:
-  inference-service:
-    build: .
-    ports: ["8000:8000"]
-    environment:
-      - MAX_BATCH_SIZE=16
-      - BATCH_TIMEOUT_MS=10
+  redis:
+    image: redis:7-alpine
+    # Redis is the shock absorber: append-only persistence is deliberately
+    # OFF here so it stays a pure in-RAM buffer optimized for throughput.
+    # For "no data lost during traffic spikes" guarantees beyond process
+    # crash, enable AOF (see README > Known Limitations).
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  gateway-1:
+    build: { context: ., dockerfile: Dockerfile.gateway }
+    environment: *gateway-env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  gateway-2:
+    build: { context: ., dockerfile: Dockerfile.gateway }
+    environment: *gateway-env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  gateway-3:
+    build: { context: ., dockerfile: Dockerfile.gateway }
+    environment: *gateway-env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports: ["8000:80"]
+    depends_on: [gateway-1, gateway-2, gateway-3]
+
+  worker-1:
+    build: { context: ., dockerfile: Dockerfile.worker }
+    environment: *worker-env
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker-2:
+    build: { context: ., dockerfile: Dockerfile.worker }
+    environment: *worker-env
+    depends_on:
+      redis:
+        condition: service_healthy
 
   prometheus:
     image: prom/prometheus
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports: ["9090:9090"]
 
   grafana:
