@@ -23,7 +23,7 @@ size grows — this repo exists to measure and demonstrate that effect.
 - [How Dynamic Batching Works](#how-dynamic-batching-works)
 - [Architecture](#architecture)
 - [Project Structure](#project-structure)
-- [Implementation Guide](./IMPLEMENTATION.md)
+- [Application Guide](./APPLICATION.md)
 - [Requirements](#requirements)
 - [Quickstart](#quickstart)
 - [Configuration](#configuration)
