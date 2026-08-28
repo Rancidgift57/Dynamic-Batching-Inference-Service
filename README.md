@@ -1,4 +1,4 @@
-# Dynamic Batching Inference Service
+# Dynamic Batching Inference Service  
 
 A FastAPI-based inference server for sentence embeddings that batches concurrent
 requests together before sending them through the model, instead of running
